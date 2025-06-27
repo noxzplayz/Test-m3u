@@ -1,71 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Multi-Channel M3U8 Player</title>
+  <title>OTT Navigator Style IPTV Player</title>
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     body {
-      font-family: sans-serif;
-      background: #f5f5f5;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #101010;
+      color: #fff;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .sidebar {
+      width: 300px;
+      background-color: #1a1a1a;
+      overflow-y: auto;
       padding: 20px;
+    }
+    .sidebar h2 {
+      font-size: 22px;
+      margin-bottom: 20px;
       text-align: center;
     }
-    input, button {
-      padding: 10px;
-      font-size: 16px;
-      width: 80%;
-      max-width: 500px;
-      margin: 10px auto;
-    }
-    video {
-      margin-top: 20px;
-      width: 100%;
-      max-width: 800px;
-      border: 1px solid #ccc;
-    }
-    ul {
-      margin-top: 30px;
-      padding: 0;
+    .channel-list {
       list-style: none;
-      max-width: 800px;
-      margin-left: auto;
-      margin-right: auto;
-      text-align: left;
     }
-    li {
-      background: white;
+    .channel-list li {
       padding: 10px;
       margin-bottom: 5px;
-      border: 1px solid #ddd;
+      background-color: #2a2a2a;
       cursor: pointer;
-      transition: background 0.2s;
+      border-left: 5px solid transparent;
+      transition: all 0.2s ease;
     }
-    li:hover {
-      background: #e6f7ff;
+    .channel-list li:hover,
+    .channel-list li.active {
+      background-color: #3a3a3a;
+      border-left: 5px solid #00bcd4;
+    }
+    .player {
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #000;
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      max-height: 100vh;
+      object-fit: contain;
     }
   </style>
 </head>
-<body>
+<body>  <div class="sidebar">
+    <h2>Live Channels</h2>
+    <ul id="channelList" class="channel-list"></ul>
+  </div>  <div class="player">
+    <video id="videoPlayer" controls autoplay></video>
+  </div>  <script>
+    const m3uUrl = "https://allinonereborn.site/tplay333.m3u";
 
-  <h1>Multi-Channel M3U8 Playlist Player</h1>
-
-  <input type="text" id="m3uUrl" value="https://allinonereborn.site/tplay333.m3u" placeholder="Enter M3U URL">
-  <button onclick="loadM3UPlaylist()">Load Channels</button>
-
-  <video id="videoPlayer" controls autoplay></video>
-
-  <ul id="channelList"></ul>
-
-  <script>
     async function loadM3UPlaylist() {
-      const url = document.getElementById('m3uUrl').value;
       const list = document.getElementById('channelList');
       const video = document.getElementById('videoPlayer');
       list.innerHTML = "";
 
       try {
-        const res = await fetch(url);
+        const res = await fetch(m3uUrl);
         const text = await res.text();
         const lines = text.split('\n');
 
@@ -77,7 +85,7 @@
           if (line.startsWith('#EXTINF')) {
             currentTitle = line.split(',').pop().trim();
           } else if (line && !line.startsWith('#')) {
-            channels.push({ title: currentTitle || 'Unnamed Channel', url: line });
+            channels.push({ title: currentTitle || 'Channel ' + (channels.length + 1), url: line });
             currentTitle = "";
           }
         }
@@ -89,12 +97,16 @@
 
         channels.forEach((channel, index) => {
           const li = document.createElement('li');
-          li.textContent = `${index + 1}. ${channel.title}`;
-          li.onclick = () => playChannel(channel.url);
+          li.textContent = channel.title;
+          li.onclick = () => {
+            document.querySelectorAll('.channel-list li').forEach(el => el.classList.remove('active'));
+            li.classList.add('active');
+            playChannel(channel.url);
+          };
           list.appendChild(li);
         });
 
-        // Autoplay first channel
+        list.firstChild.classList.add('active');
         playChannel(channels[0].url);
 
       } catch (err) {
@@ -106,19 +118,20 @@
     function playChannel(streamUrl) {
       const video = document.getElementById('videoPlayer');
       if (Hls.isSupported()) {
+        if (window.hls) {
+          window.hls.destroy();
+        }
         const hls = new Hls();
         hls.loadSource(streamUrl);
         hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => video.play());
+        window.hls = hls;
       } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        // Safari fallback
         video.src = streamUrl;
-        video.play();
       } else {
         alert("Your browser does not support HLS playback.");
       }
     }
-  </script>
 
-</body>
+    window.onload = loadM3UPlaylist;
+  </script></body>
 </html>
