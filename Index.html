@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple M3U Player</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 50px;
+      background: #f9f9f9;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px;
+    }
+    #playlist {
+      margin-top: 30px;
+      text-align: left;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    li {
+      cursor: pointer;
+    }
+    li:hover {
+      background-color: #eaeaea;
+    }
+  </style>
+</head>
+<body>
+  <h1>Simple M3U Playlist Player</h1>
+
+  <input type="text" id="m3uUrl" placeholder="Enter M3U file URL" size="50">
+  <button onclick="loadPlaylist()">Load Playlist</button>
+
+  <audio id="audioPlayer" controls style="margin-top:20px; width:100%;"></audio>
+
+  <ul id="playlist"></ul>
+
+  <script>
+    async function loadPlaylist() {
+      const url = document.getElementById('m3uUrl').value;
+      const response = await fetch(url);
+      const text = await response.text();
+      const lines = text.split('\n').filter(line =>
+        line.trim() !== '' && !line.startsWith('#')
+      );
+
+      const playlistElement = document.getElementById('playlist');
+      playlistElement.innerHTML = '';
+
+      const audio = document.getElementById('audioPlayer');
+
+      lines.forEach((line, index) => {
+        const li = document.createElement('li');
+        li.textContent = `Track ${index + 1}: ${line.split('/').pop()}`;
+        li.onclick = () => {
+          audio.src = line;
+          audio.play();
+        };
+        playlistElement.appendChild(li);
+      });
+
+      if (lines.length > 0) {
+        audio.src = lines[0];
+        audio.play();
+      }
+    }
+  </script>
+</body>
+</html>
