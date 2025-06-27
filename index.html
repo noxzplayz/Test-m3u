@@ -48,7 +48,12 @@
 
   <h1>M3U Playlist Player</h1>
 
-  <input type="text" id="m3uInput" placeholder="Paste .m3u file URL here">
+  <input
+    type="text"
+    id="m3uInput"
+    value="https://allinonereborn.site/tplay333.m3u"
+    placeholder="Paste .m3u file URL here"
+  >
   <button onclick="loadM3U()">Load</button>
 
   <audio id="audioPlayer" controls></audio>
@@ -94,6 +99,9 @@
         console.error(error);
       }
     }
+
+    // Auto-load the default URL when the page opens
+    window.onload = () => loadM3U();
   </script>
 
 </body>
