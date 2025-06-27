@@ -2,106 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>M3U Playlist Player</title>
+  <title>HLS .m3u8 Player</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     body {
-      font-family: sans-serif;
-      background: #f0f2f5;
-      padding: 40px;
+      font-family: Arial, sans-serif;
       text-align: center;
+      padding: 40px;
+      background: #f4f4f4;
     }
     input, button {
       padding: 10px;
       font-size: 16px;
-      margin: 10px 5px;
       width: 300px;
+      margin: 10px;
     }
-    button {
-      cursor: pointer;
-    }
-    audio {
+    video {
       margin-top: 20px;
-      width: 100%;
-      max-width: 600px;
-    }
-    ul {
-      list-style: none;
-      padding: 0;
-      max-width: 600px;
-      margin: 30px auto 0;
-      text-align: left;
-    }
-    li {
-      padding: 10px;
+      width: 90%;
+      max-width: 700px;
       border: 1px solid #ccc;
-      margin-bottom: 5px;
-      background: #fff;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    li:hover {
-      background: #e0e0e0;
     }
   </style>
 </head>
 <body>
 
-  <h1>M3U Playlist Player</h1>
+  <h1>HLS (.m3u8) Player</h1>
 
-  <input
-    type="text"
-    id="m3uInput"
-    value="https://allinonereborn.site/tplay333.m3u"
-    placeholder="Paste .m3u file URL here"
-  >
-  <button onclick="loadM3U()">Load</button>
+  <input type="text" id="streamUrl" value="https://allinonereborn.site/tplay333.m3u" placeholder="Enter .m3u8 stream URL">
+  <button onclick="loadStream()">Play</button>
 
-  <audio id="audioPlayer" controls></audio>
-
-  <ul id="trackList"></ul>
+  <video id="videoPlayer" controls></video>
 
   <script>
-    async function loadM3U() {
-      const url = document.getElementById('m3uInput').value;
-      const audio = document.getElementById('audioPlayer');
-      const list = document.getElementById('trackList');
-      list.innerHTML = '';
+    function loadStream() {
+      const video = document.getElementById('videoPlayer');
+      const url = document.getElementById('streamUrl').value;
 
-      try {
-        const res = await fetch(url);
-        const text = await res.text();
-        const lines = text.split('\n').filter(line =>
-          line.trim() && !line.startsWith('#')
-        );
-
-        if (lines.length === 0) {
-          alert("No playable URLs found in the .m3u file.");
-          return;
-        }
-
-        lines.forEach((line, index) => {
-          const li = document.createElement('li');
-          const filename = decodeURIComponent(line.split('/').pop());
-          li.textContent = `Track ${index + 1}: ${filename}`;
-          li.onclick = () => {
-            audio.src = line;
-            audio.play();
-          };
-          list.appendChild(li);
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(url);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          video.play();
         });
-
-        // Play the first track by default
-        audio.src = lines[0];
-        audio.play();
-
-      } catch (error) {
-        alert("Failed to load or parse the M3U file.");
-        console.error(error);
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // For Safari
+        video.src = url;
+        video.addEventListener('loadedmetadata', () => {
+          video.play();
+        });
+      } else {
+        alert("Your browser does not support HLS playback.");
       }
     }
 
-    // Auto-load the default URL when the page opens
-    window.onload = () => loadM3U();
+    // Optional: autoplay on page load
+    window.onload = loadStream;
   </script>
 
 </body>
