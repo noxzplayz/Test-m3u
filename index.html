@@ -2,73 +2,99 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Simple M3U Player</title>
+  <title>M3U Playlist Player</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: sans-serif;
+      background: #f0f2f5;
+      padding: 40px;
       text-align: center;
-      padding: 50px;
-      background: #f9f9f9;
     }
     input, button {
       padding: 10px;
       font-size: 16px;
-      margin: 10px;
+      margin: 10px 5px;
+      width: 300px;
     }
-    #playlist {
-      margin-top: 30px;
-      text-align: left;
-      max-width: 400px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    li {
+    button {
       cursor: pointer;
     }
+    audio {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 600px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+      max-width: 600px;
+      margin: 30px auto 0;
+      text-align: left;
+    }
+    li {
+      padding: 10px;
+      border: 1px solid #ccc;
+      margin-bottom: 5px;
+      background: #fff;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
     li:hover {
-      background-color: #eaeaea;
+      background: #e0e0e0;
     }
   </style>
 </head>
 <body>
-  <h1>Simple M3U Playlist Player</h1>
 
-  <input type="text" id="m3uUrl" placeholder="Enter M3U file URL" size="50">
-  <button onclick="loadPlaylist()">Load Playlist</button>
+  <h1>M3U Playlist Player</h1>
 
-  <audio id="audioPlayer" controls style="margin-top:20px; width:100%;"></audio>
+  <input type="text" id="m3uInput" placeholder="Paste .m3u file URL here">
+  <button onclick="loadM3U()">Load</button>
 
-  <ul id="playlist"></ul>
+  <audio id="audioPlayer" controls></audio>
+
+  <ul id="trackList"></ul>
 
   <script>
-    async function loadPlaylist() {
-      const url = document.getElementById('m3uUrl').value;
-      const response = await fetch(url);
-      const text = await response.text();
-      const lines = text.split('\n').filter(line =>
-        line.trim() !== '' && !line.startsWith('#')
-      );
-
-      const playlistElement = document.getElementById('playlist');
-      playlistElement.innerHTML = '';
-
+    async function loadM3U() {
+      const url = document.getElementById('m3uInput').value;
       const audio = document.getElementById('audioPlayer');
+      const list = document.getElementById('trackList');
+      list.innerHTML = '';
 
-      lines.forEach((line, index) => {
-        const li = document.createElement('li');
-        li.textContent = `Track ${index + 1}: ${line.split('/').pop()}`;
-        li.onclick = () => {
-          audio.src = line;
-          audio.play();
-        };
-        playlistElement.appendChild(li);
-      });
+      try {
+        const res = await fetch(url);
+        const text = await res.text();
+        const lines = text.split('\n').filter(line =>
+          line.trim() && !line.startsWith('#')
+        );
 
-      if (lines.length > 0) {
+        if (lines.length === 0) {
+          alert("No playable URLs found in the .m3u file.");
+          return;
+        }
+
+        lines.forEach((line, index) => {
+          const li = document.createElement('li');
+          const filename = decodeURIComponent(line.split('/').pop());
+          li.textContent = `Track ${index + 1}: ${filename}`;
+          li.onclick = () => {
+            audio.src = line;
+            audio.play();
+          };
+          list.appendChild(li);
+        });
+
+        // Play the first track by default
         audio.src = lines[0];
         audio.play();
+
+      } catch (error) {
+        alert("Failed to load or parse the M3U file.");
+        console.error(error);
       }
     }
   </script>
+
 </body>
 </html>
